@@ -603,9 +603,9 @@ with left:
         with c2:
             highcalorie = st.selectbox("High-calorie food intake", ["No", "Yes"])
         with c3:
-            fcvc = st.slider("Vegetable servings/meal", 1, 6, 2, 1)
+            fcvc = st.slider("Vegetable servings/per meal", 1, 6, 2, 1)
         with c4:
-            ncp = st.slider("Main meals/day", 1, 6, 3, 1)
+            ncp = st.slider("Main meals/per day", 1, 6, 3, 1)
 
         st.markdown('<div class="section-header"><h3>Lifestyle & Activity</h3></div>', unsafe_allow_html=True)
         c1, c2, c3 = st.columns(3)
