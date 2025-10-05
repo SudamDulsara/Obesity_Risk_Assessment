@@ -174,20 +174,36 @@ def _download_drive_with_requests(file_id: str, dest: Path):
     tmp.replace(dest)
 
 def _download_model(dest: Path):
-    file_id = st.secrets.get("MODEL_FILE_ID") or _extract_drive_id(st.secrets.get("MODEL_URL", ""))
-    if not file_id:
-        st.error("Neither MODEL_FILE_ID nor a valid MODEL_URL is set in .streamlit/secrets.toml")
-        st.stop()
+    # Try Streamlit secrets first; if missing, fall back to env vars
     try:
-        import gdown  # best for big Drive files
-        tmp = dest.with_suffix(dest.suffix + ".part")
+        model_file_id = st.secrets.get("MODEL_FILE_ID")
+        model_url = st.secrets.get("MODEL_URL", "")
+    except Exception:
+        # No secrets file in this environment
+        model_file_id = os.getenv("MODEL_FILE_ID")
+        model_url = os.getenv("MODEL_URL", "")
+
+    file_id = model_file_id or _extract_drive_id(model_url)
+    if not file_id:
+        st.error(
+            "Model location isn’t configured.\n\n"
+            "Set **MODEL_FILE_ID** (or **MODEL_URL**) either in Streamlit Cloud → Settings → Secrets, "
+            "or as environment variables. Example secrets:\n\n"
+            'MODEL_FILE_ID = "1AbCDeFgHiJKlmNoPqrSTuvWXyz123456"\n'
+        )
+        st.stop()
+
+    try:
+        import gdown
         dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(dest.suffix + ".part")
         gdown.download(id=file_id, output=str(tmp), quiet=False)
         tmp.replace(dest)
         return
     except ModuleNotFoundError:
         st.info("gdown not installed; using a direct download fallback. For large Drive files, add 'gdown==5.2.0' to requirements.txt.")
         _download_drive_with_requests(file_id, dest)
+
 
 @st.cache_resource(show_spinner="Downloading model…")
 def ensure_model_local(local_path: Path) -> Path:
