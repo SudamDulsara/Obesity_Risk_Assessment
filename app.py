@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
+import hashlib, requests, os, tempfile, re
 
 
 st.set_page_config(
@@ -217,22 +218,79 @@ label{{color:{PALETTE['text_muted']};font-weight:600;}}
     unsafe_allow_html=True,
 )
 
+def _extract_drive_id(s: str) -> str | None:
+    """Return a Google Drive file ID from a URL or ID string, or None if not found."""
+    if not s:
+        return None
+    # If it looks like a bare ID (no slashes, length ~25-60, alnum/underscore/hyphen)
+    if re.fullmatch(r"[A-Za-z0-9_-]{20,}", s):
+        return s
+    # Common URL patterns
+    m = re.search(r"/d/([A-Za-z0-9_-]{20,})", s)
+    if m:
+        return m.group(1)
+    m = re.search(r"[?&]id=([A-Za-z0-9_-]{20,})", s)
+    if m:
+        return m.group(1)
+    return None
+
+def _download_with_gdown(dest: Path) -> None:
+    import gdown
+    # Prefer explicit MODEL_FILE_ID; fall back to extracting from MODEL_URL
+    file_id = st.secrets.get("MODEL_FILE_ID")
+    if not file_id:
+        file_id = _extract_drive_id(st.secrets.get("MODEL_URL", ""))
+    if not file_id:
+        st.error("Neither MODEL_FILE_ID nor a valid MODEL_URL is set in secrets.")
+        st.stop()
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_suffix(dest.suffix + ".part")
+    # gdown will handle confirm tokens, large files, etc.
+    gdown.download(id=file_id, output=str(tmp), quiet=False)
+    tmp.replace(dest)
+
+@st.cache_resource(show_spinner="Downloading model from Google Drive…")
+def ensure_model_local(local_path: Path) -> Path:
+    if local_path.exists():
+        return local_path
+    _download_with_gdown(local_path)
+    if not local_path.exists() or local_path.stat().st_size == 0:
+        st.error("Model download failed or produced an empty file.")
+        st.stop()
+    return local_path
+
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def _stream_download(url: str, dest: Path):
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with requests.get(url, stream=True, timeout=120) as r:
+        r.raise_for_status()
+        total = int(r.headers.get("content-length", 0))
+        downloaded = 0
+        tmp = dest.with_suffix(dest.suffix + ".part")
+        with open(tmp, "wb") as f:
+            for chunk in r.iter_content(chunk_size=1024 * 1024):
+                if not chunk:
+                    continue
+                f.write(chunk)
+                downloaded += len(chunk)
+                if total:
+                    st.progress(min(downloaded / total, 1.0))
+        tmp.replace(dest)
+
 APP_DIR = Path(__file__).resolve().parent
 TRAINED_DIR = APP_DIR / "Trained"
 PREPROC_DIR = APP_DIR / "Preprocessing" / "output"
 CSV_FALLBACK = PREPROC_DIR / "cleaned_obesity_level.csv"
 MODEL_PATH = TRAINED_DIR / "RF_model.pkl"
+MODEL_PATH = ensure_model_local(MODEL_PATH)
 META_PATHS = [TRAINED_DIR / "RF_model_meta.json", APP_DIR / "RF_model_meta.json"]
-
-
-def _load_json_first(paths):
-    for p in paths:
-        try:
-            if p.exists():
-                return json.loads(p.read_text(encoding="utf-8")), p
-        except Exception:
-            continue
-    return None, None
 
 
 @st.cache_resource
@@ -243,6 +301,14 @@ def load_artifacts(model_path: Path, meta_paths):
     meta, meta_path = _load_json_first(meta_paths)
     return pipe, meta, meta_path
 
+def _load_json_first(paths):
+    for p in paths:
+        try:
+            if p.exists():
+                return json.loads(p.read_text(encoding="utf-8")), p
+        except Exception:
+            continue
+    return None, None
 
 try:
     pipe, meta, meta_path = load_artifacts(MODEL_PATH, META_PATHS)
