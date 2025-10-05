@@ -1,0 +1,76 @@
+{
+  "feature_order": [
+    "Gender",
+    "Age",
+    "family_hist",
+    "highcalorie",
+    "vegtables",
+    "main_meals",
+    "snacks",
+    "smokes",
+    "water_intake",
+    "monitors_calories",
+    "physical_activity",
+    "screen_time",
+    "alcohol",
+    "transport",
+    "BMI"
+  ],
+  "numeric_features": [
+    "Age",
+    "family_hist",
+    "highcalorie",
+    "vegtables",
+    "main_meals",
+    "smokes",
+    "water_intake",
+    "monitors_calories",
+    "physical_activity",
+    "screen_time",
+    "BMI"
+  ],
+  "categorical_features": [
+    "Gender",
+    "snacks",
+    "alcohol",
+    "transport"
+  ],
+  "categorical_values": {
+    "Gender": [
+      "Female",
+      "Male"
+    ],
+    "snacks": [
+      "0",
+      "Always",
+      "Frequently",
+      "Sometimes"
+    ],
+    "alcohol": [
+      "0",
+      "Frequently",
+      "Sometimes",
+      "unknown"
+    ],
+    "transport": [
+      "Automobile",
+      "Bike",
+      "Motorbike",
+      "Public_Transportation",
+      "Walking"
+    ]
+  },
+  "classes": [
+    "Insufficient_Weight",
+    "Normal_Weight",
+    "Obesity_Type_I",
+    "Obesity_Type_II",
+    "Obesity_Type_III",
+    "Overweight_Level_I",
+    "Overweight_Level_II"
+  ],
+  "versions": {
+    "python": "3.13.5 | packaged by Anaconda, Inc. | (main, Jun 12 2025, 16:37:03) [MSC v.1929 64 bit (AMD64)]",
+    "sklearn": "1.6.1"
+  }
+}
