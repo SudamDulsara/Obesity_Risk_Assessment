@@ -260,11 +260,36 @@ def _load_json_first(paths):
 # ---------------------- model/artifact loading ----------------------
 @st.cache_resource
 def load_artifacts(model_path: Path, meta_paths):
-    if not model_path.exists():
-        raise FileNotFoundError(f"Model not found at {model_path}")
-    pipe = joblib.load(model_path)
+    import sys
+    try:
+        pipe = joblib.load(model_path)
+    except Exception as e:
+        # Show actionable diagnostics in the UI
+        try:
+            import sklearn as _sk
+            skl_ver = _sk.__version__
+        except Exception:
+            skl_ver = "not importable"
+        try:
+            import joblib as _jl
+            jl_ver = _jl.__version__
+        except Exception:
+            jl_ver = "unknown"
+
+        st.error(
+            "Failed to load the model. This usually means a version mismatch or a "
+            "missing custom transformer.\n\n"
+            f"**Python:** {sys.version.split()[0]}\n"
+            f"**scikit-learn:** {skl_ver}\n"
+            f"**joblib:** {jl_ver}\n\n"
+            f"**Original error type:** {type(e).__name__}\n"
+            f"**Original error text:** {e}"
+        )
+        st.stop()
+
     meta, meta_path = _load_json_first(meta_paths)
     return pipe, meta, meta_path
+
 
 # (removed duplicate load_artifacts)
 
