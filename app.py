@@ -603,7 +603,7 @@ with left:
         with c2:
             highcalorie = st.selectbox("High-calorie food intake", ["No", "Yes"])
         with c3:
-            fcvc = st.slider("Vegetable servings/day", 1, 6, 2, 1)
+            fcvc = st.slider("Vegetable servings/meal", 1, 6, 2, 1)
         with c4:
             ncp = st.slider("Main meals/day", 1, 6, 3, 1)
 
@@ -804,7 +804,7 @@ st.markdown(
   <div style="display:flex; align-items:center; justify-content:center; gap:.5rem; flex-wrap:wrap;">
     <span class="brand">Health Analytics</span>
     <span>•</span>
-    <span>For professional use — not a substitute for medical advice</span>
+    <span>For professional use — not a substitute for medical advice. Additionally, please note that certain factors of this assessment will change your result depending on the inputs.</span>
   </div>
 </div>
 """,
