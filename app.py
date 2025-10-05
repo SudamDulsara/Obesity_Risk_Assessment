@@ -739,11 +739,6 @@ if submitted:
                     unsafe_allow_html=True,
                 )
 
-                # Optional probability breakdown
-                if proba is not None and CLASS_LABELS is not None and len(proba) == len(CLASS_LABELS):
-                    st.markdown('<div class="section-header"><h3>Class probabilities</h3></div>', unsafe_allow_html=True)
-                    render_probabilities(CLASS_LABELS, list(map(float, proba)))
-
                 st.markdown('<div class="stat-grid">', unsafe_allow_html=True)
                 col_a, col_b, col_c = st.columns(3)
                 with col_a:
